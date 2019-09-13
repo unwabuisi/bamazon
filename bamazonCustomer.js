@@ -39,13 +39,13 @@ connection.query('SELECT * FROM products', function(err,results) {
         {
         type: 'input',
         name: 'units',
-        message: "How many units would you like to purchase?(enter a number between 0 - 10)"
+        message: "How many units would you like to purchase? (Enter a number between 1 - 10)"
   }
       ])
       .then(answers => {
 
         // console.log(JSON.stringify(answers, null, '  '));
-        customer_product_id = answers.product_id;
+        customer_product_id = parseInt(answers.product_id);
         customer_units = parseInt(answers.units);
 
         searchQuery = 'SELECT * FROM products WHERE id = ' + parseInt(customer_product_id);
@@ -54,13 +54,26 @@ connection.query('SELECT * FROM products', function(err,results) {
             if (err) throw err;
 
 
-            console.log(res);
+            // console.log(res);
             var quantity = res[0].stock_quantity;
+            var total_cost = res[0].price * customer_units;
+
+            console.log(`You are purchasing ${customer_units} ${res[0].product_name}'s for ${res[0].price} each\n`);
             if (customer_units <= quantity) {
-                updateQuery = 'UPDATE'
+                var new_quantity = quantity - customer_units;
+                var updateQuery = `UPDATE products SET stock_quantity = ${new_quantity} WHERE id = ${customer_product_id}`;
+
+                connection.query(updateQuery, function(err,sqlresult) {
+                    if (err) throw err;
+
+                    console.log('* * PURCHASE SUCCESSFUL * *\n');
+                    console.log('Your total cost is:' + total_cost);
+
+                });
             }
             else {
-                console.log('Insufficient Quantity!');
+                console.log('* * PURCHASE UNSUCCESSFUL * *\n');
+                console.log(`Insufficient Quantity!\nWe do not have that many ${res[0].product_name}'s in stock!`);
             }
 
             connection.end();
