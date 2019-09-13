@@ -14,9 +14,7 @@ var connection = mysql.createConnection({
 connection.connect(function(err) {
     if (err) throw err;
     // console.log("connected as id " + connection.threadID);
-
 });
-
 
 function viewAllProducts() {
     var query = 'SELECT * FROM products;'
@@ -67,7 +65,6 @@ function addToInventory() {
           }
 
       ]).then(answers => {
-
         var searchQuery = `SELECT * FROM products WHERE product_name = '${answers.productToAddTo}'`;
         var productID;
         connection.query(searchQuery, function(err,results){
@@ -81,30 +78,53 @@ function addToInventory() {
                 if (err) throw err;
                 console.log(`* * SUCCESS * *\nYou've added ${answers.unitsToAdd} units to the ${answers.productToAddTo} stock!`);
             });
-
-
-
             connection.end();
         });
 
-
-        // connection.query(query, function(err,res){
-        //     if (err) throw err;
-        //     console.log(res);
-        //     connection.end();
-        // });
-        // console.log(JSON.stringify(answers, null, '  '));
-
         });
-
-
-
-
     });
-
-
 }
 
+function addNewProduct() {
+    inquirer.prompt
+    ([
+        {
+            type:'input',
+            name:'productName',
+            message:'What is the name of this new product?'
+        },
+        {
+            type:'input',
+            name:'department',
+            message:'What store department does it belong to?'
+        },
+        {
+            type:'input',
+            name:'price',
+            message:'What is the price of this new product? (ex: 1899.99)'
+        },
+        {
+            type:'input',
+            name:'stock',
+            message:'What is the beginning stock quantity? (Enter a number between 1 - 1000)'
+        }
+
+    ]).then(answers => {
+        var product = answers.productName;
+        var dept = answers.department;
+        var price = parseInt(answers.price);
+        var stock = parseInt(answers.stock);
+        var query = `INSERT INTO products (product_name, department_name, price, stock_quantity, product_sales) VALUES ("${product}","${dept}",${price},${stock},0)`;
+        connection.query(query,function(err,res){
+            if (err) throw err;
+            connection.end();
+        });
+    });
+}
+
+
+
+// MAIN Program ---------------
 inquirer.prompt
 (
     {
@@ -130,12 +150,10 @@ inquirer.prompt
             break;
         case 'Add to Inventory':
             addToInventory();
-
             break;
-
         case 'Add New Product':
+            addNewProduct();
             break;
-
     }
     // console.log(JSON.stringify(answers, null, '  '));
   });

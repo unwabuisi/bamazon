@@ -17,10 +17,12 @@ connection.connect(function(err) {
 });
 
 connection.query('SELECT * FROM products', function(err,results) {
+    var products = [];
     if (err) throw err;
     console.log(`ID\t|\tName\n`);
     results.forEach(function(product){
         console.log(`${product.id}\t|\t${product.product_name}\t\t($${product.price})`);
+        products.push(product.id);
     });
 
     console.log('\n');
@@ -28,13 +30,14 @@ connection.query('SELECT * FROM products', function(err,results) {
     var customer_product_id;
     var customer_units;
 
+
     inquirer
       .prompt([
           {
             type: 'list',
             name: 'product_id',
             message: 'Which product would you like to purchase? (Select ID)',
-            choices: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+            choices: products
         },
         {
         type: 'input',
@@ -56,7 +59,9 @@ connection.query('SELECT * FROM products', function(err,results) {
 
             // console.log(res);
             var quantity = res[0].stock_quantity;
-            var total_cost = res[0].price * customer_units;
+            var total_cost = parseInt(res[0].price * customer_units);
+            var productSales = parseInt(res[0].product_sales);
+
 
             console.log(`You are purchasing ${customer_units} ${res[0].product_name}'s for ${res[0].price} each\n`);
             if (customer_units <= quantity) {
@@ -67,7 +72,13 @@ connection.query('SELECT * FROM products', function(err,results) {
                     if (err) throw err;
 
                     console.log('* * PURCHASE SUCCESSFUL * *\n');
-                    console.log('Your total cost is:' + total_cost);
+                    console.log('Your total cost is: $' + total_cost);
+                    productSales += total_cost;
+                    var productSaleQuery = `UPDATE products SET product_sales = ${productSales} WHERE id = ${customer_product_id}`;
+                    connection.query(productSaleQuery, function(err,results){
+                        if (err) throw err;
+                        connection.end();
+                    });
 
                 });
             }
@@ -76,7 +87,7 @@ connection.query('SELECT * FROM products', function(err,results) {
                 console.log(`Insufficient Quantity!\nWe do not have that many ${res[0].product_name}'s in stock!`);
             }
 
-            connection.end();
+
         });
 
 

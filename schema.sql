@@ -23,3 +23,16 @@ VALUES  ("iPhone Screen Protector", "Electronics", 14.99, 200),
         ("Shower Head", "Home Improvement", 29.99, 250),
         ("Floor Lamp", "Home Improvement", 79.99, 100)
 ;
+
+
+CREATE TABLE departments (
+    department_id INT AUTO_INCREMENT,
+    department_name VARCHAR(255) NOT NULL,
+    overhead_costs INT,
+    total_sales INT
+    PRIMARY KEY (department_id)
+);
+
+ALTER TABLE products
+ADD product_sales INT;
+UPDATE products SET product_sales = 0;
