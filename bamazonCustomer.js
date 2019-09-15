@@ -47,7 +47,6 @@ connection.query('SELECT * FROM products', function(err,results) {
       ])
       .then(answers => {
 
-        // console.log(JSON.stringify(answers, null, '  '));
         customer_product_id = parseInt(answers.product_id);
         customer_units = parseInt(answers.units);
 
@@ -55,12 +54,9 @@ connection.query('SELECT * FROM products', function(err,results) {
 
         connection.query(searchQuery,function(err, res){
             if (err) throw err;
-
-
-            // console.log(res);
             var quantity = res[0].stock_quantity;
-            var total_cost = parseInt(res[0].price * customer_units);
-            var productSales = parseInt(res[0].product_sales);
+            var total_cost = parseFloat(res[0].price * customer_units);
+            var productSales = parseFloat(res[0].product_sales);
 
 
             console.log(`You are purchasing ${customer_units} ${res[0].product_name}'s for ${res[0].price} each\n`);
@@ -72,19 +68,34 @@ connection.query('SELECT * FROM products', function(err,results) {
                     if (err) throw err;
 
                     console.log('* * PURCHASE SUCCESSFUL * *\n');
-                    console.log('Your total cost is: $' + total_cost);
+                    console.log('Your total cost is: $' + total_cost.toFixed(2));
                     productSales += total_cost;
                     var productSaleQuery = `UPDATE products SET product_sales = ${productSales} WHERE id = ${customer_product_id}`;
                     connection.query(productSaleQuery, function(err,results){
                         if (err) throw err;
-                        connection.end();
+
                     });
+                    var deptQuery = `SELECT * FROM departments WHERE department_id = ${res[0].dept_id}`;
+
+                    connection.query(deptQuery,function(err,deptResults){
+                        if (err) throw err;
+                        var total_sales = deptResults[0].total_sales + total_cost;
+                        var totalSalesQuery = `UPDATE departments SET total_sales = ${total_sales} WHERE department_id = ${res[0].dept_id}`;
+                        connection.query(totalSalesQuery, function(err,salesResults){
+                            if (err) throw err;
+                            connection.end();
+                        });
+
+
+                    });
+
 
                 });
             }
             else {
                 console.log('* * PURCHASE UNSUCCESSFUL * *\n');
                 console.log(`Insufficient Quantity!\nWe do not have that many ${res[0].product_name}'s in stock!`);
+                connection.end();
             }
 
 

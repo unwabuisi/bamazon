@@ -10,7 +10,6 @@ var connection = mysql.createConnection({
     password: "password",
     database: "Bamazon"
 });
-
 connection.connect(function(err) {
     if (err) throw err;
     // console.log("connected as id " + connection.threadID);
@@ -33,10 +32,15 @@ function viewLowInventory() {
     var query = 'SELECT * FROM products WHERE stock_quantity < 5';
     connection.query(query, function(err,res){
         if (err) throw err;
-
-        console.table(res);
+        if (res.length == 0) {
+            console.log('\n N/A -- All products have more than 5 units in stock!\n');
+        }
+        else {
+            console.table(res);
+        }
         connection.end();
     });
+
 }
 
 function addToInventory() {
@@ -77,8 +81,9 @@ function addToInventory() {
             connection.query(query,function(err,res){
                 if (err) throw err;
                 console.log(`* * SUCCESS * *\nYou've added ${answers.unitsToAdd} units to the ${answers.productToAddTo} stock!`);
+                console.log('Here is the updated listing of all products\n\n');
             });
-            connection.end();
+            viewAllProducts();
         });
 
         });
@@ -112,13 +117,31 @@ function addNewProduct() {
     ]).then(answers => {
         var product = answers.productName;
         var dept = answers.department;
-        var price = parseInt(answers.price);
+        var price = parseFloat(answers.price);
         var stock = parseInt(answers.stock);
-        var query = `INSERT INTO products (product_name, department_name, price, stock_quantity, product_sales) VALUES ("${product}","${dept}",${price},${stock},0)`;
-        connection.query(query,function(err,res){
-            if (err) throw err;
-            connection.end();
+        var deptQuery = 'SELECT * FROM departments';
+
+        connection.query(deptQuery, function(err,results){
+            var deptIncorrect = true;
+            results.forEach(function(result,index){
+                if (dept == result.department_name) {
+                    deptIncorrect = false;
+                    var query = `INSERT INTO products (product_name, department_name, price, stock_quantity, product_sales,dept_id) VALUES ("${product}","${dept}",${price},${stock},0,${result.department_id})`;
+                    connection.query(query,function(err,res){
+                        if (err) throw err;
+                        console.log('* * SUCCESS * *');
+                        console.log(`You've added a new product: ${product} -- units: ${stock}`);
+                        connection.end();
+                    });
+                }
+            });
+            if (deptIncorrect) {
+                console.log('* * FAILED * *');
+                console.log('The department you are trying to add this product to does not exist or has been mispelled. Try again!');
+                connection.end();
+            }
         });
+
     });
 }
 
@@ -133,7 +156,7 @@ inquirer.prompt
       message: 'What would you like to do?',
       choices: [
           'View Products for Sale',
-          'View Low Inventory',
+          'View Low Inventory (Stock less than 5 units)',
           'Add to Inventory',
           'Add New Product'
       ]
@@ -145,7 +168,7 @@ inquirer.prompt
         case 'View Products for Sale':
             viewAllProducts();
             break;
-        case 'View Low Inventory':
+        case 'View Low Inventory (Stock less than 5 units)':
             viewLowInventory();
             break;
         case 'Add to Inventory':
